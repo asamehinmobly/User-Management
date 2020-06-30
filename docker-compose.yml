@@ -1,0 +1,82 @@
+version: "3"
+
+services:
+
+  redis_pubsub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: allocation-image
+    depends_on:
+      - mysql
+      - redis
+      - mailhog
+    environment:
+      - DB_HOST=mysql
+      - DB_PASSWORD=root
+      - REDIS_HOST=redis
+      - EMAIL_HOST=mailhog
+      - PYTHONDONTWRITEBYTECODE=1
+    volumes:
+      - ./src:/src
+      - ./tests:/tests
+    entrypoint:
+      - python
+      - /src/allocation/entrypoints/redis_eventconsumer.py
+
+  api:
+    image: user-management-image
+    depends_on:
+      - redis_pubsub
+      - mailhog
+    environment:
+      - DB_HOST=mysql
+      - DB_PASSWORD=root
+      - API_HOST=api
+      - REDIS_HOST=redis
+      - EMAIL_HOST=mailhog
+      - PYTHONDONTWRITEBYTECODE=1
+      - FLASK_APP=allocation/entrypoints/flask_app.py
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./src:/src
+      - ./tests:/tests
+    entrypoint:
+      - flask
+      - run
+      - --host=0.0.0.0
+      - --port=80
+    ports:
+      - "5005:80"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "63791:6379"
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "11025:1025"
+      - "18025:8025"
+
+  mysql:
+    image: mysql:5.7.22
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
