@@ -4,7 +4,7 @@ import abc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
-import config
+from config import DB_USER, DB_PASSWORD, config, DB_HOST, DB_NAME
 from adapters import repository
 from adapters.repository import user_repository, external_gateway_repository, device_repository, owner_repository, \
     token_repository
@@ -66,12 +66,12 @@ class AbstractUnitOfWork(abc.ABC):
         raise NotImplementedError
 
 
-DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
-    config.get_postgres_uri(),
-    isolation_level="READ COMMITTED",
-))
+# DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
+#     config.get_postgres_uri(),
+#     isolation_level="READ COMMITTED",
+# ))
 
-DATABASE_URL = 'mysql://root:root@0.0.0.0/users_db'
+DATABASE_URL = 'mysql://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + '/' + DB_NAME
 DEFAULT_SESSION_FACTORY_MEMORY = sessionmaker(bind=create_engine(DATABASE_URL))
 
 

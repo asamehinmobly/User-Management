@@ -22,6 +22,7 @@ setuptools~=47.3.0
 DateTime~=4.3
 loguru~=0.5.1
 starlette~=0.13.4
+starlette-context~=0.2.2
 uvicorn~=0.11.5
 fastapi~=0.58.0
 pydantic~=1.5.1

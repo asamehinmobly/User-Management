@@ -2,10 +2,9 @@ import abc
 import datetime
 from typing import Set, TypeVar
 
-from mysqlx import DataError
 from pydantic import ValidationError
 from sqlalchemy import asc, desc
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, DataError
 from sqlalchemy.orm import load_only
 
 from domain import model

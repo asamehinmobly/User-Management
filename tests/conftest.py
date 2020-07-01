@@ -11,8 +11,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, clear_mappers
 from tenacity import retry, stop_after_delay
 
-from adapters.orm import metadata, start_mappers
-from skeleton import config
+from adapters.orm.orm import start_mappers
+import config
+from adapters.orm.singleton_meta_data import MetaDataSingleton
 
 pytest.register_assert_rewrite('tests.e2e.api_client')
 
@@ -20,7 +21,7 @@ pytest.register_assert_rewrite('tests.e2e.api_client')
 @pytest.fixture
 def in_memory_sqlite_db():
     engine = create_engine('sqlite:///:memory:')
-    metadata.create_all(engine)
+    MetaDataSingleton().get_instance().create_all(engine)
     return engine
 
 

@@ -11,7 +11,7 @@ class User:
                    'change_pass_time', 'creation_on', "province"]
 
     def __init__(self, app_id: int, name: str, email: str, password: str, phone: str, user_id: str, firebase_id: str,
-                 external: str, devices: List[UserDevices] = None):
+                 external: str, devices: List[UserDevices]):
         self.id = None
         self.app_id = app_id
         self.name = name
@@ -27,19 +27,6 @@ class User:
         self.change_pass_time = None
         self.creation_on = self.updated_on = datetime.now()
         self.events = []  # type: List[events.Event]
-
-    def login(self, pwd: str) -> bool:
-        login_status = False
-        try:
-            if pwd == self.pwd:
-                login_status = True
-                self.events.append(events.LoggedIn(
-                    userID=self.id, email=self.email, lastLogin=datetime.utcnow()
-                ))
-        except StopIteration:
-            login_status = False
-            self.events.append(events.LoginFailed(userID=self.ID, date=datetime.utcnow()))
-        return login_status
 
     def send_reset_password(self):
         self.events.append(events.ResetPasswordEmailSent(
@@ -96,10 +83,11 @@ class UsedToken:
 class Owner:
     load_fields = ['id', 'app_identifier']
 
-    def __init__(self, app_identifier: str, configuration=None):
+    def __init__(self, app_identifier: str, configuration=None, users: List[User] = None):
         self.id = None
         self.app_identifier = app_identifier
         self.configuration = configuration
+        self.users = users
         self.events = []  # type: List[events.Event]
 
 

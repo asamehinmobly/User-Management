@@ -57,7 +57,7 @@ def create_user(cmd: commands.CreateUser, uow: unit_of_work.AbstractUnitOfWork):
         else:
             user = model.User(email=data["email"], password=data["password"], name=data["name"], app_id=data["app_id"],
                               phone=data["phone"], user_id=data["user_id"], firebase_id=data["firebase_id"],
-                              external=data["external"])
+                              external=data["external"], devices=[])
             uow.users.add(user)
             uow.commit()
         user.create(login_type)

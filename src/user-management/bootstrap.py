@@ -1,6 +1,7 @@
 import inspect
 from typing import Callable
-from adapters import orm, redis_eventpublisher
+from adapters import redis_eventpublisher
+from adapters.orm import orm
 from service_layer import handlers, messagebus, unit_of_work
 from adapters.message_broker import (AbstractMessageBroker, RabbitMessageBroker)
 
