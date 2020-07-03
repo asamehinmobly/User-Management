@@ -3,7 +3,7 @@ import jwt
 from datetime import datetime
 import time
 from config import JWT_SECRET_KEY, JWT_EXPIRES
-from domain.model import User
+from domain.models.user import User
 
 
 def encrypt(plaintext):

@@ -1,16 +1,16 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import json
 import time
 from typing import List, Dict, Callable, Type, TYPE_CHECKING
 
-from config import BROKER_TEMPLATE_QUEUE, RESET_PASS_TOKEN
-from domain import commands, events, model
-from utils.consumer import ConsumerThread
-from utils.producer import ProducerThread
+from config import BROKER_TEMPLATE_QUEUE, RESET_PASS_TOKEN, BROKER_TEMPLATE_JOB_QUEUE
+from domain import commands, events
+from domain.models.user import User
+from domain.models.user_devices import UserDevices
+from utils.email import prepare_message_for_email
 from utils.queue import create_queue
-from utils.request import prepare_request_data, prepare_response_data, encode_password
+from utils.request import prepare_request_data, encode_password
 from utils.reset_token import create_user_token, encrypt, decrypt
 from utils.subscription import set_to_free
 
@@ -55,9 +55,9 @@ def create_user(cmd: commands.CreateUser, uow: unit_of_work.AbstractUnitOfWork):
         if users_list:
             user = users_list[0]
         else:
-            user = model.User(email=data["email"], password=data["password"], name=data["name"], app_id=data["app_id"],
-                              phone=data["phone"], user_id=data["user_id"], firebase_id=data["firebase_id"],
-                              external=data["external"], devices=[])
+            user = User(email=data["email"], password=data["password"], name=data["name"], app_id=data["app_id"],
+                        phone=data["phone"], user_id=data["user_id"], firebase_id=data["firebase_id"],
+                        external=data["external"], devices=[])
             uow.users.add(user)
             uow.commit()
         user.create(login_type)
@@ -66,7 +66,7 @@ def create_user(cmd: commands.CreateUser, uow: unit_of_work.AbstractUnitOfWork):
 
 def attach_device(cmd: commands.AttachDeviceToUser, uow: unit_of_work.AbstractUnitOfWork):
     with uow:
-        device = model.UserDevices(
+        device = UserDevices(
             user_id=cmd.device_data.user_id, device_id=cmd.device_data.device_id,
             device_token=cmd.device_data.device_token,
             device_type=cmd.device_data.device_type
@@ -176,8 +176,9 @@ def update_device_token(cmd: commands.UpdateDeviceToken, uow: unit_of_work.Abstr
         uow.commit()
 
 
-def export_app_users(cmd: commands.ExportAppUsers, uow: unit_of_work.AbstractUnitOfWork, data: dict):
-    create_queue(app_id=cmd.app_id, user=cmd.user)
+def export_app_users(cmd: commands.ExportAppUsers, notifications: message_broker.AbstractMessageBroker):
+    message = {'app_id': cmd.app_id, 'user': cmd.user}
+    notifications.send(message, BROKER_TEMPLATE_JOB_QUEUE)
 
 
 def set_user_subscription_to_free(event: events.UserCreated):
@@ -186,36 +187,20 @@ def set_user_subscription_to_free(event: events.UserCreated):
 
 
 def send_user_created_notification(event: events.UserCreated, notifications: message_broker.AbstractMessageBroker):
-    notifications.send(event.__dict__, "welcome", BROKER_TEMPLATE_QUEUE)
+    message = prepare_message_for_email(event.__dict__, "welcome")
+    notifications.send(message, BROKER_TEMPLATE_QUEUE)
 
 
 def send_reset_email_notification(event: events.ResetPasswordEmailSent,
                                   notifications: message_broker.AbstractMessageBroker):
-    notifications.send(event.__dict__, "reset_password", BROKER_TEMPLATE_QUEUE)
+    message = prepare_message_for_email(event.__dict__, "reset_password")
+    notifications.send(message, BROKER_TEMPLATE_QUEUE)
 
 
-def password_changed_notification(
-        event: events.PasswordChanged, notifications: message_broker.AbstractMessageBroker,
-):
-    notifications.send(event.__dict__, "success_reset_password", BROKER_TEMPLATE_QUEUE)
-
-
-def login_failed(
-        event: events.LoginFailed, uow: unit_of_work.AbstractUnitOfWork
-):
-    pass  # here you can add history to user
-
-
-def add_login_history(
-        event: events.LoggedIn, uow: unit_of_work.SqlAlchemyUnitOfWork,
-):
-    pass  # add login history
-
-
-def publish_loggedin_event(
-        event: events.LoggedIn, publish: Callable,
-):
-    publish('LoggedIn', event)
+def password_changed_notification(event: events.PasswordChanged,
+                                  notifications: message_broker.AbstractMessageBroker):
+    message = prepare_message_for_email(event.__dict__, "success_reset_password")
+    notifications.send(message, BROKER_TEMPLATE_QUEUE)
 
 
 EVENT_HANDLERS = {
@@ -233,5 +218,5 @@ COMMAND_HANDLERS = {
     commands.AttachDeviceToUser: attach_device,
     # commands.SetUserSubscriptionToFree: set_user_subscription_to_free,
     commands.SendResetEmail: send_reset_email,
-    # commands.ExportAppUsers: export_app_users
+    commands.ExportAppUsers: export_app_users
 }  # type: Dict[Type[commands.Command], Callable]
