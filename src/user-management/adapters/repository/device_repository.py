@@ -1,6 +1,6 @@
 from datetime import datetime
 from adapters.repository.repository import SqlAlchemyRepository
-from domain.model import UserDevices
+from domain.models.user_devices import UserDevices
 
 
 class DeviceRepository(SqlAlchemyRepository):

@@ -1,6 +1,6 @@
 from adapters.repository.repository import SqlAlchemyRepository
-from domain import model
-from domain.model import User
+from domain.models import model
+from domain.models.user import User
 
 
 class UserRepository(SqlAlchemyRepository):
@@ -9,7 +9,7 @@ class UserRepository(SqlAlchemyRepository):
     def __init__(self, session):
         super().__init__(session)
 
-    def get_by_email(self, _email, _app_id) -> model.User:
+    def get_by_email(self, _email, _app_id) -> User:
         user = self._get_by_email(_email, _app_id)
         if user:
             self.seen.add(user)

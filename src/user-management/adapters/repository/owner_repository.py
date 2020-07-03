@@ -1,5 +1,5 @@
 from adapters.repository.repository import SqlAlchemyRepository
-from domain.model import Owner
+from domain.models.owner import Owner
 
 
 class OwnerRepository(SqlAlchemyRepository):

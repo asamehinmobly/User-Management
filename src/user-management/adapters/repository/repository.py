@@ -1,13 +1,12 @@
 import abc
 import datetime
-from typing import Set, TypeVar
 
 from pydantic import ValidationError
 from sqlalchemy import asc, desc
 from sqlalchemy.exc import SQLAlchemyError, DataError
 from sqlalchemy.orm import load_only
 
-from domain import model
+from domain.models.user import User
 
 
 class AbstractRepository(abc.ABC):
@@ -60,11 +59,11 @@ class AbstractRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _get_by_email(self, _email, _app_id) -> model.User:
+    def _get_by_email(self, _email, _app_id) -> User:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _get_by_id(self, _id) -> model.User:
+    def _get_by_id(self, _id) -> User:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -90,10 +89,10 @@ class SqlAlchemyRepository(AbstractRepository):
         self.session.add(obj)
 
     def _get_by_email(self, _email, _app_id):
-        return self.session.query(model.User).filter_by(email=_email, app_id=_app_id).first()
+        return self.session.query(User).filter_by(email=_email, app_id=_app_id).first()
 
     def _get_by_id(self, _id: int):
-        return self.session.query(model.User).filter_by(id=_id).first()
+        return self.session.query(User).filter_by(id=_id).first()
 
     def _all(self, condition, page, per_page, keyword, order_data):
         data = self.session.query(self.Model).filter_by(**condition).options(

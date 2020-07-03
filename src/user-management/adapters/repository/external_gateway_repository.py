@@ -1,5 +1,5 @@
 from adapters.repository.repository import SqlAlchemyRepository
-from domain.model import ExternalGateway
+from domain.models.external_gateway import ExternalGateway
 
 
 class ExternalGatewayRepository(SqlAlchemyRepository):

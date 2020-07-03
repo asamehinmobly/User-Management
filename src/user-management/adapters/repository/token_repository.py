@@ -1,5 +1,5 @@
 from adapters.repository.repository import SqlAlchemyRepository
-from domain.model import UsedToken
+from domain.models.used_token import UsedToken
 
 
 class TokenRepository(SqlAlchemyRepository):

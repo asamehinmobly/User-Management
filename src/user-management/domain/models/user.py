@@ -1,9 +1,8 @@
-from __future__ import annotations
-from dataclasses import dataclass
+from datetime import datetime
 from typing import List
 
-from . import events
-from datetime import datetime
+from domain import events
+from domain.models.user_devices import UserDevices
 
 
 class User:
@@ -50,49 +49,3 @@ class User:
             create_status = False
             self.events.append(events.LoginFailed(userID=self.ID, date=datetime.utcnow()))
         return create_status
-
-
-class UserDevices:
-
-    def __init__(self, user_id: int, device_id: str, device_token: str, device_type: str, last_login: datetime = None):
-        self.user_id = user_id
-        self.device_id = device_id
-        self.device_token = device_token
-        self.device_type = device_type
-        self.last_login = last_login
-        self.events = []  # type: List[events.Event]
-
-
-class ExternalGateway:
-    load_fields = ['id', 'gateway_name']
-
-    def __init__(self, gateway_name: str, app_id: str):
-        self.gateway_name = gateway_name
-        self.app_id = app_id
-        self.events = []  # type: List[events.Event]
-
-
-class UsedToken:
-    load_fields = ['id', 'token', 'used']
-
-    def __init__(self, token: str, used: int = 0):
-        self.token = token
-        self.used = used
-
-
-class Owner:
-    load_fields = ['id', 'app_identifier']
-
-    def __init__(self, app_identifier: str, configuration=None, users: List[User] = None):
-        self.id = None
-        self.app_identifier = app_identifier
-        self.configuration = configuration
-        self.users = users
-        self.events = []  # type: List[events.Event]
-
-
-@dataclass(unsafe_hash=True)
-class LoginHistory:
-    ID: str
-    UserID: str
-    LastLogin: datetime
