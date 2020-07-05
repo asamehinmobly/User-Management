@@ -1,5 +1,4 @@
 from adapters.repository.repository import SqlAlchemyRepository
-from domain.models import model
 from domain.models.user import User
 
 

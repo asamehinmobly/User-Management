@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 from config import JWT_SECRET_KEY, JWT_EXPIRES
 from domain.models.user import User
+from utils.owner import get_owner_id
 
 
 def encrypt(plaintext):
@@ -15,7 +16,7 @@ def decrypt(ciphertext):
 
 
 def create_user_token(user: User):
-    app_data = {'app_identifier': user.app_id}
+    app_data = {'app_identifier': get_owner_id(user.app_id)}
     user_dict = user.__dict__
     user_dict.pop('_sa_instance_state', None)
     user_dict.pop("password", None)

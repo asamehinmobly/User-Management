@@ -1,22 +1,21 @@
-# pylint: disable=unused-argument
 from __future__ import annotations
-
 import time
 from typing import List, Dict, Callable, Type, TYPE_CHECKING
-
-from config import BROKER_TEMPLATE_QUEUE, RESET_PASS_TOKEN, BROKER_TEMPLATE_JOB_QUEUE
+from config import BROKER_TEMPLATE_QUEUE
+from utils.email import prepare_message_for_email
+from utils.subscription import set_to_free
+from config import BROKER_TEMPLATE_JOB_QUEUE, RESET_PASS_TOKEN
 from domain import commands, events
+from domain.models.used_token import UsedToken
 from domain.models.user import User
 from domain.models.user_devices import UserDevices
-from utils.email import prepare_message_for_email
-from utils.queue import create_queue
+from utils.owner import get_owner_id
 from utils.request import prepare_request_data, encode_password
 from utils.reset_token import create_user_token, encrypt, decrypt
-from utils.subscription import set_to_free
 
 if TYPE_CHECKING:
     from adapters import message_broker
-    from . import unit_of_work
+    from service_layer import unit_of_work
 
 
 class InvalidEmail(Exception):
@@ -90,7 +89,7 @@ def send_reset_email(cmd: commands.SendResetEmail, uow: unit_of_work.AbstractUni
         if isinstance(user, list):
             for x in user:
                 user_data = {
-                    "app_id": app_id,
+                    "app_id": get_owner_id(app_id),
                     "name": x.name,
                     "email": cmd.email, "kwargs": {
                         "token": token_encoded
@@ -99,14 +98,14 @@ def send_reset_email(cmd: commands.SendResetEmail, uow: unit_of_work.AbstractUni
                 x.send_reset_password()
         else:
             user_data = {
-                "app_id": app_id,
+                "app_id": get_owner_id(app_id),
                 "name": user.name,
                 "email": cmd.email, "kwargs": {
                     "token": token_encoded
                 }}
             user.send_reset_password()
         cmd.token_encoded = token_encoded
-        token = model.UsedToken(token=token_encoded)
+        token = UsedToken(token=token_encoded)
         uow.used_tokens.add(token)
         uow.commit()
 
@@ -164,7 +163,7 @@ def refresh_token(cmd: commands.RefreshToken, uow: unit_of_work.AbstractUnitOfWo
             # Create New Token .....
             returned_data["user_token"] = create_user_token(user)
             time_now = int(time.time())
-            user_refresh_token = "%s,%d,%s" % (user["user_id"], time_now, user["app_id"])
+            user_refresh_token = "%s,%d,%s" % (user["user_id"], time_now, get_owner_id(user["app_id"]))
             returned_data["refresh_token"] = encrypt(user_refresh_token)
 
 
@@ -179,7 +178,6 @@ def update_device_token(cmd: commands.UpdateDeviceToken, uow: unit_of_work.Abstr
 def export_app_users(cmd: commands.ExportAppUsers, notifications: message_broker.AbstractMessageBroker):
     message = {'app_id': cmd.app_id, 'user': cmd.user}
     notifications.send(message, BROKER_TEMPLATE_JOB_QUEUE)
-
 
 def set_user_subscription_to_free(event: events.UserCreated):
     if event.login_type == "Boltplay":
@@ -203,14 +201,6 @@ def password_changed_notification(event: events.PasswordChanged,
     notifications.send(message, BROKER_TEMPLATE_QUEUE)
 
 
-EVENT_HANDLERS = {
-    # events.PasswordChanged: [send_password_changed_notification],
-    # events.LoggedIn: [publish_loggedin_event, add_login_history],
-    events.UserCreated: [send_user_created_notification],
-    events.ResetPasswordEmailSent: [send_reset_email_notification],
-    events.PasswordChanged: [password_changed_notification]
-}  # type: Dict[Type[events.Event], List[Callable]]
-
 COMMAND_HANDLERS = {
     # commands.ResetPassword: send_reset_password_notification,
     commands.ResetPassword: reset_password,
@@ -220,3 +210,12 @@ COMMAND_HANDLERS = {
     commands.SendResetEmail: send_reset_email,
     commands.ExportAppUsers: export_app_users
 }  # type: Dict[Type[commands.Command], Callable]
+
+EVENT_HANDLERS = {
+    # events.PasswordChanged: [send_password_changed_notification],
+    # events.LoggedIn: [publish_loggedin_event, add_login_history],
+    events.UserCreated: [send_user_created_notification],
+    events.ResetPasswordEmailSent: [send_reset_email_notification],
+    events.PasswordChanged: [password_changed_notification]
+}  # type: Dict[Type[events.Event], List[Callable]]
+

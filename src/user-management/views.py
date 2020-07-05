@@ -5,6 +5,7 @@ from config import RESET_PASS_TOKEN
 from entrypoints.fast_api.request_model.model import UserDataResponse, CreateUserInResponse, UserDataInResponse, \
     SendResetEmailInResponse
 from service_layer import unit_of_work
+from utils.owner import get_owner_id
 from utils.request import check_password, prepare_response_data
 from utils.reset_token import create_user_token, encrypt
 from utils.subscription import get_user_email_by_order_id, map_plans_data
@@ -33,7 +34,7 @@ def user_create_response(email: str, app_id: int, login_type: str, uow: unit_of_
             user.external = "Boltplay"
 
         time_now = int(time.time())
-        user_refresh_token = "%s,%d,%s" % (user.user_id, time_now, app_id)
+        user_refresh_token = "%s,%d,%s" % (user.user_id, time_now, get_owner_id(app_id))
 
         user_response = CreateUserInResponse(
             user_data=UserDataInResponse(

@@ -1,5 +1,6 @@
 from weakref import WeakValueDictionary
 
+
 class Singleton(type):
     _instances = {}
 

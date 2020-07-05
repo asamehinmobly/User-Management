@@ -40,12 +40,10 @@ class User:
     def create(self, login_type: str):
         create_status = True
         try:
-
             self.events.append(events.UserCreated(
                 name=self.name, province=self.province, user_id=self.user_id, email=self.email, app_id=self.app_id,
                 login_type=login_type
             ))
         except StopIteration:
             create_status = False
-            self.events.append(events.LoginFailed(userID=self.ID, date=datetime.utcnow()))
         return create_status
